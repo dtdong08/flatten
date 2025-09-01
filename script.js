@@ -34,7 +34,6 @@
 			return null;
 		}
 	}
-
 	async function fetchJson(url, token) {
 		const headers = {
 			'Accept': 'application/vnd.github.v3+json'
@@ -49,13 +48,11 @@
 		}
 		return res.json();
 	}
-
 	async function getDefaultBranch(owner, repo, token) {
 		const api = `https://api.github.com/repos/${owner}/${repo}`;
 		const j = await fetchJson(api, token);
 		return j.default_branch || 'main';
 	}
-
 	async function getTree(owner, repo, branch, token) {
 		const api = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
 		return fetchJson(api, token);
@@ -64,7 +61,6 @@
 	function makeRawUrl(owner, repo, branch, path) {
 		return `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
 	}
-
 	async function flatten(urlString) {
 		const parsed = parseGitHubUrl(urlString);
 		if (!parsed) {
@@ -78,32 +74,31 @@
 			branch: branchFromUrl
 		} = parsed;
 		const token = tokenInput.value.trim() || undefined;
-		setStatus('Getting repo\'s information');
+		setStatus('Retrieving repository information');
 		try {
 			const branch = branchFromUrl || await getDefaultBranch(owner, repo, token);
-			setStatus('Getting repo\'s files tree');
+			setStatus('Fetching repository file tree');
 			const treeResp = await getTree(owner, repo, branch, token);
 			if (treeResp.truncated) {
-				setStatus('Kết quả bị cắt (truncated). Hãy cung cấp token để tăng rate limit hoặc xuất repo local.');
+				setStatus('Results truncated. Provide a PAT to increase rate limits or export the repository locally.');
 			} else {
-				setStatus('Tải xong. Xử lý...');
+				setStatus('Files retrieved. Processing...');
 			}
 			const blobs = (treeResp.tree || []).filter(e => e.type === 'blob');
 			blobs.sort((a, b) => a.path.localeCompare(b.path));
 			const lines = blobs.map(b => `${b.path}: ${makeRawUrl(owner, repo, branch, b.path)}`);
 			output.value = lines.join('\n');
-			setStatus(`Hoàn thành. ${lines.length} file.`);
+			setStatus(`Completed.\n${lines.length} files.`);
 		} catch (err) {
 			console.error(err);
-			setStatus('Lỗi: ' + err.message);
+			setStatus('Error: ' + err.message);
 			output.value = '';
 		}
 	}
-
 	goBtn.addEventListener('click', () => {
 		const v = repoUrl.value.trim();
 		if (!v) {
-			setStatus('Nhập URL trước');
+			setStatus('Enter a repository URL first');
 			return;
 		}
 		flatten(v);
@@ -111,13 +106,12 @@
 	copyBtn.addEventListener('click', () => {
 		output.select();
 		document.execCommand('copy');
-		setStatus('Đã sao chép ô 2');
+		setStatus('Output copied to clipboard');
 	});
 	toggleToken.addEventListener('click', () => {
 		tokenRow.style.display = tokenRow.style.display === 'none' ? 'block' : 'none';
 		tokenInput.focus();
 	});
-
 	repoUrl.addEventListener('keydown', (e) => {
 		if (e.key === 'Enter') {
 			e.preventDefault();
@@ -125,5 +119,4 @@
 			if (v) flatten(v);
 		}
 	});
-
 })();

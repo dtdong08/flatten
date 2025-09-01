@@ -1,64 +1,95 @@
 :root {
   font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  color: #0f172a;
+  color: #1f2937;            /* xám đậm */
+  background-color: #ffffff; /* nền trắng */
 }
+
 body {
   padding: 24px;
-  background: #f8fafc;
+  background: #ffffff;
 }
+
 .card {
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
   padding: 18px;
   max-width: 900px;
   margin: 0 auto;
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+  box-shadow: none;
+  border: 1px solid #1f2937; /* xám nhạt */
 }
+
 label {
   display: block;
   font-weight: 600;
   margin-bottom: 6px;
+  color: #111827;            /* gần đen */
 }
+
 textarea,
 input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #e6eef6;
+  border: 1px solid #000;
   padding: 10px;
   border-radius: 8px;
   font-family: monospace;
+  background: #ffffff;
+  color: #111827;
+  outline: none;
 }
+
+textarea:focus,
+input:focus {
+  outline: none;
+  border-color: #e5e7eb;
+}
+
 .row {
   display: flex;
   gap: 12px;
   align-items: center;
 }
+
 .small {
   font-size: 13px;
-  color: #475569;
+  color: #6b7280;
 }
+
 .controls {
   display: flex;
   gap: 8px;
   margin-top: 8px;
 }
+
 button {
   padding: 8px 12px;
   border-radius: 8px;
-  border: 0;
-  background: #0ea5a4;
-  color: white;
+  border: 1px solid #1f2937; /* viền xám đậm */
+  background: transparent;
+  color: #1f2937;
   cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  outline: none;
 }
-button.secondary {
-  background: #64748b;
+
+button:hover {
+  background: #1f2937;
+  color: #ffffff;
 }
+
+button:focus {
+  outline: none;
+}
+
 .hint {
   font-size: 13px;
-  color: #64748b;
+  color: #6b7280;
   margin-top: 8px;
 }
+
 .token-row {
   margin-top: 8px;
   display: none;
 }
+

@@ -8,6 +8,15 @@
 	const tokenRow = document.getElementById('tokenRow');
 	const tokenInput = document.getElementById('tokenInput');
 
+	const PAT_STORAGE_KEY = 'githubFlattenerPat';
+
+	function loadPatFromStorage() {
+		const savedPat = localStorage.getItem(PAT_STORAGE_KEY);
+		if (savedPat) {
+			tokenInput.value = savedPat;
+		}
+	}
+
 	function setStatus(s) {
 		status.textContent = 'State: ' + s;
 	}
@@ -73,7 +82,15 @@
 			repo,
 			branch: branchFromUrl
 		} = parsed;
-		const token = tokenInput.value.trim() || undefined;
+
+		const tokenValue = tokenInput.value.trim();
+		if (tokenValue) {
+			localStorage.setItem(PAT_STORAGE_KEY, tokenValue);
+		} else {
+			localStorage.removeItem(PAT_STORAGE_KEY);
+		}
+		const token = tokenValue || undefined;
+
 		setStatus('Retrieving repository information');
 		try {
 			const branch = branchFromUrl || await getDefaultBranch(owner, repo, token);
@@ -119,4 +136,6 @@
 			if (v) flatten(v);
 		}
 	});
+
+	loadPatFromStorage();
 })();

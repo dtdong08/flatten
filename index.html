@@ -3,147 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Github Repo Flattener</title>
-  <style>
-    :root{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a}
-    body{padding:24px;background:#f8fafc}
-    .card{background:white;border-radius:12px;padding:18px;max-width:900px;margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
-    label{display:block;font-weight:600;margin-bottom:6px}
-    textarea,input{width:100%;box-sizing:border-box;border:1px solid #e6eef6;padding:10px;border-radius:8px;font-family:monospace}
-    .row{display:flex;gap:12px;align-items:center}
-    .small{font-size:13px;color:#475569}
-    .controls{display:flex;gap:8px;margin-top:8px}
-    button{padding:8px 12px;border-radius:8px;border:0;background:#0ea5a4;color:white;cursor:pointer}
-    button.secondary{background:#64748b}
-    .hint{font-size:13px;color:#64748b;margin-top:8px}
-    .token-row{margin-top:8px;display:none}
-  </style>
+  <title>GitHub Flattener</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="card">
-    <h1 style="font-size:18px;margin:0 0 12px 0">Github Repo Flattener</h1>
+    <h1 style="font-size:18px;margin:0 0 12px 0">GitHub repository Flattener</h1>
 
-    <label for="repoUrl">Repo URL</label>
-    <!-- Ô 1: dài nhưng thấp -->
-    <input id="repoUrl" type="text" rows="2" placeholder="Ví dụ: https://github.com/dtdong08/dtdong08.github.io" />
+    <label for="repoUrl">GitHub repository URL</label>
+    <input id="repoUrl" type="text" rows="2"/>
 
     <div class="token-row" id="tokenRow">
-      <label for="tokenInput">(Tùy chọn) GitHub token (thôgn thường bắt đầu bằng ghp_)</label>
-      <input id="tokenInput" type="password" placeholder="Nhập token để tăng rate limit (optional)" />
+      <label for="tokenInput">GitHub PAT (starting with ghp_)</label>
+      <input id="tokenInput" type="password"/>
     </div>
 
     <div class="controls">
-      <button id="goBtn">Lấy cấu trúc (blur cũng kích hoạt)</button>
-      <button id="toggleToken" class="secondary" type="button">Sử dụng token (tùy chọn)</button>
-      <button id="copyBtn" class="secondary" type="button">Sao chép ô 2</button>
+      <button id="goBtn">Flatten</button>
+      <button id="toggleToken" class="secondary" type="button">Using PAT (optional)</button>
+      <button id="copyBtn" class="secondary" type="button">Copy result</button>
     </div>
 
-    <div class="hint" id="status">Trạng thái: chờ nhập URL</div>
+    <div class="hint" id="status">State: waiting for URL</div>
 
-    <label for="output" style="margin-top:12px">Output</label>
-    <!-- Ô 2: hiển thị kết quả lớn -->
-    <textarea id="output" rows="16" readonly placeholder="Kết quả sẽ hiện ở đây"></textarea>
+    <label for="output" style="margin-top:12px">Result</label>
+    <textarea id="output" rows="16" readonly></textarea>
   </div>
 
-<script>
-(function(){
-  const repoUrl = document.getElementById('repoUrl');
-  const output = document.getElementById('output');
-  const status = document.getElementById('status');
-  const goBtn = document.getElementById('goBtn');
-  const copyBtn = document.getElementById('copyBtn');
-  const toggleToken = document.getElementById('toggleToken');
-  const tokenRow = document.getElementById('tokenRow');
-  const tokenInput = document.getElementById('tokenInput');
-
-  function setStatus(s){ status.textContent = 'Trạng thái: ' + s; }
-
-  function parseGitHubUrl(url){
-    try{
-      url = url.trim();
-      if(!url) return null;
-      // remove .git suffix
-      url = url.replace(/\.git\/?$/,'');
-      const u = new URL(url);
-      if(!/github.com$/i.test(u.hostname)) return null;
-      const parts = u.pathname.split('/').filter(Boolean);
-      if(parts.length < 2) return null;
-      const owner = parts[0];
-      const repo = parts[1];
-      // if URL contains /tree/BRANCH or /blob/BRANCH
-      let branch = undefined;
-      if(parts.length >= 4 && (parts[2] === 'tree' || parts[2] === 'blob')) branch = parts[3];
-      return {owner, repo, branch};
-    }catch(e){ return null; }
-  }
-
-  async function fetchJson(url, token){
-    const headers = { 'Accept': 'application/vnd.github.v3+json' };
-    if(token) headers['Authorization'] = 'token ' + token;
-    const res = await fetch(url, {headers});
-    if(!res.ok){ const txt = await res.text().catch(()=>res.statusText); throw new Error(res.status + ' ' + txt); }
-    return res.json();
-  }
-
-  async function getDefaultBranch(owner, repo, token){
-    const api = `https://api.github.com/repos/${owner}/${repo}`;
-    const j = await fetchJson(api, token);
-    return j.default_branch || 'main';
-  }
-
-  async function getTree(owner, repo, branch, token){
-    const api = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
-    return fetchJson(api, token);
-  }
-
-  function makeRawUrl(owner, repo, branch, path){
-    // raw URL should not contain leading slash
-    return `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
-  }
-
-  async function flatten(urlString){
-    const parsed = parseGitHubUrl(urlString);
-    if(!parsed) { setStatus('URL không hợp lệ'); output.value = ''; return; }
-    const {owner, repo, branch: branchFromUrl} = parsed;
-    const token = tokenInput.value.trim() || undefined;
-    setStatus('Lấy thông tin repo...');
-    try{
-      const branch = branchFromUrl || await getDefaultBranch(owner, repo, token);
-      setStatus('Lấy cây file (recursive)...');
-      const treeResp = await getTree(owner, repo, branch, token);
-      if(treeResp.truncated){
-        setStatus('Kết quả bị cắt (truncated). Hãy cung cấp token để tăng rate limit hoặc xuất repo local.');
-      } else {
-        setStatus('Tải xong. Xử lý...');
-      }
-      const blobs = (treeResp.tree || []).filter(e => e.type === 'blob');
-      // sort by path
-      blobs.sort((a,b)=> a.path.localeCompare(b.path));
-      const lines = blobs.map(b => `${b.path}: ${makeRawUrl(owner, repo, branch, b.path)}`);
-      output.value = lines.join('\n');
-      setStatus(`Hoàn thành. ${lines.length} file.`);
-    }catch(err){
-      console.error(err);
-      setStatus('Lỗi: ' + err.message);
-      output.value = '';
-    }
-  }
-
-  // trigger on blur
-  repoUrl.addEventListener('blur', ()=>{
-    const v = repoUrl.value.trim();
-    if(v) flatten(v);
-  });
-
-  // button handlers
-  goBtn.addEventListener('click', ()=>{ const v = repoUrl.value.trim(); if(!v) { setStatus('Nhập URL trước'); return; } flatten(v); });
-  copyBtn.addEventListener('click', ()=>{ output.select(); document.execCommand('copy'); setStatus('Đã sao chép ô 2'); });
-  toggleToken.addEventListener('click', ()=>{ tokenRow.style.display = tokenRow.style.display === 'none' ? 'block' : 'none'; tokenInput.focus(); });
-
-  // allow paste of full GitHub URL and auto-trigger on Enter
-  repoUrl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); const v = repoUrl.value.trim(); if(v) flatten(v); } });
-
-})();
-</script>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,64 @@
+:root {
+  font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+body {
+  padding: 24px;
+  background: #f8fafc;
+}
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+textarea,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e6eef6;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: monospace;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.small {
+  font-size: 13px;
+  color: #475569;
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 0;
+  background: #0ea5a4;
+  color: white;
+  cursor: pointer;
+}
+button.secondary {
+  background: #64748b;
+}
+.hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 8px;
+}
+.token-row {
+  margin-top: 8px;
+  display: none;
+}
